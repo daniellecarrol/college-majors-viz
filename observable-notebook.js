@@ -5,28 +5,27 @@ md`# College Majors: Salary, Employment & Gender
 
 Explore outcomes for recent graduates across different majors using FiveThirtyEight data.`
 
-// Controls
-viewof category = Inputs.select(
-  ["all", ...categories],
-  {
-    label: "Major Category",
-    format: d => d === "all" ? "All Categories" : d
-  }
-)
+// Category filter dropdown
+viewof category = {
+  const sel = html`<select>
+    <option value="all">All Categories</option>
+    ${categories.map(c => `<option value="${c}">${c}</option>`).join('')}
+  </select>`;
+  sel.dispatchEvent(new CustomEvent("input"));
+  return sel;
+}
 
-viewof sortMetric = Inputs.select(
-  [
-    {label: "Median Salary", value: "Median"},
-    {label: "Unemployment Rate", value: "Unemployment_rate"},
-    {label: "% Women", value: "ShareWomen"},
-    {label: "Total Graduates", value: "Total"}
-  ],
-  {
-    label: "Sort By",
-    format: d => d.label,
-    value: {label: "Median Salary", value: "Median"}
-  }
-)
+// Sort metric dropdown
+viewof sortMetric = {
+  const sel = html`<select>
+    <option value="Median">Median Salary</option>
+    <option value="Unemployment_rate">Unemployment Rate</option>
+    <option value="ShareWomen">% Women</option>
+    <option value="Total">Total Graduates</option>
+  </select>`;
+  sel.dispatchEvent(new CustomEvent("input"));
+  return sel;
+}
 
 // Statistics panel
 md`### Summary Statistics`
@@ -143,7 +142,7 @@ filteredData = category === "all"
   : data.filter(d => d.Major_category === category)
 
 sortedData = [...filteredData]
-  .sort((a, b) => b[sortMetric.value] - a[sortMetric.value])
+  .sort((a, b) => b[sortMetric] - a[sortMetric])
   .slice(0, 30)
 
 categories = [...new Set(data.map(d => d.Major_category))].sort()
@@ -163,6 +162,3 @@ data = {
 
 // Import D3
 d3 = require("d3@7")
-
-// Import Observable Inputs
-import {Inputs} from "@observablehq/inputs"
