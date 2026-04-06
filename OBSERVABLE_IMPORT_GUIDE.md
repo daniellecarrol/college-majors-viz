@@ -37,30 +37,28 @@ categories = [...new Set(data.map(d => d.Major_category))].sort()
 
 **Cell 4 - Category Filter:**
 ```js
-viewof category = Inputs.select(
-  ["all", ...categories],
-  {
-    label: "Major Category",
-    format: d => d === "all" ? "All Categories" : d
-  }
-)
+viewof category = {
+  const sel = html`<select>
+    <option value="all">All Categories</option>
+    ${categories.map(c => `<option value="${c}">${c}</option>`).join('')}
+  </select>`;
+  sel.dispatchEvent(new CustomEvent("input"));
+  return sel;
+}
 ```
 
 **Cell 5 - Sort Control:**
 ```js
-viewof sortMetric = Inputs.select(
-  [
-    {label: "Median Salary", value: "Median"},
-    {label: "Unemployment Rate", value: "Unemployment_rate"},
-    {label: "% Women", value: "ShareWomen"},
-    {label: "Total Graduates", value: "Total"}
-  ],
-  {
-    label: "Sort By",
-    format: d => d.label,
-    value: {label: "Median Salary", value: "Median"}
-  }
-)
+viewof sortMetric = {
+  const sel = html`<select>
+    <option value="Median">Median Salary</option>
+    <option value="Unemployment_rate">Unemployment Rate</option>
+    <option value="ShareWomen">% Women</option>
+    <option value="Total">Total Graduates</option>
+  </select>`;
+  sel.dispatchEvent(new CustomEvent("input"));
+  return sel;
+}
 ```
 
 **Cell 6 - Filter Data:**
@@ -73,7 +71,7 @@ filteredData = category === "all"
 **Cell 7 - Sort Data:**
 ```js
 sortedData = [...filteredData]
-  .sort((a, b) => b[sortMetric.value] - a[sortMetric.value])
+  .sort((a, b) => b[sortMetric] - a[sortMetric])
   .slice(0, 30)
 ```
 
@@ -206,10 +204,11 @@ html`<iframe src="URL_TO_YOUR_GITHUB_PAGES" width="100%" height="800" frameborde
 ## Tips for Observable
 
 - **D3 is built-in**: No need to import d3, it's available by default
-- **Inputs library**: `@observablehq/inputs` is also built-in
+- **Native HTML selects**: Use `html` tagged templates instead of `Inputs.select`
 - **Reactive cells**: When you change `category` or `sortMetric`, dependent cells auto-update
 - **Cell order doesn't matter**: Observable figures out dependencies automatically
 - **Use `viewof`**: This makes inputs reactive
+- **`sortMetric` is a plain string**: Use `sortMetric` directly, not `sortMetric.value`
 
 ## Testing
 
@@ -223,11 +222,10 @@ After creating the notebook:
 
 - **"data is not defined"**: Make sure the data cell runs first (it should automatically)
 - **No chart showing**: Check browser console for errors
-- **Inputs not working**: Make sure you used `viewof` keyword
+- **Inputs not working**: Make sure you used `viewof` keyword and `dispatchEvent` to trigger initial value
 - **Slow loading**: The CSV has 173 rows, should load in 1-2 seconds
 
 ## Example Observable Notebooks for Reference
 
 - https://observablehq.com/@d3/bar-chart
-- https://observablehq.com/@observablehq/input-select
 - https://observablehq.com/@d3/color-schemes
