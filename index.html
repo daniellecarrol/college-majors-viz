@@ -13,30 +13,31 @@
             background: #f5f5f5;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1300px;
             margin: 0 auto;
             background: white;
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        h1 { margin: 0 0 10px 0; color: #333; }
-        .subtitle { color: #666; margin-bottom: 20px; }
+        h1 { margin: 0 0 6px 0; color: #222; font-size: 22px; }
+        .subtitle { color: #666; margin-bottom: 18px; font-size: 14px; }
         .controls {
             display: flex;
             gap: 20px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             flex-wrap: wrap;
             align-items: flex-end;
         }
-        .control-group { display: flex; flex-direction: column; gap: 5px; }
-        label { font-size: 12px; font-weight: 600; color: #555; text-transform: uppercase; }
+        .control-group { display: flex; flex-direction: column; gap: 4px; }
+        label { font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.05em; }
         select, button {
-            padding: 8px 12px;
+            padding: 7px 12px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
+            background: white;
         }
         button {
             background: #0066cc;
@@ -45,38 +46,82 @@
             transition: background 0.2s;
         }
         button:hover { background: #0052a3; }
+        button.active { background: #004499; }
+        .charts {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+        .chart-wrap {
+            flex: 1;
+        }
+        .chart-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 6px;
+        }
+        .chart-hint {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 4px;
+        }
         .tooltip {
             position: absolute;
-            padding: 12px;
-            background: rgba(0,0,0,0.9);
+            padding: 10px 12px;
+            background: rgba(20,20,20,0.92);
             color: white;
-            border-radius: 4px;
+            border-radius: 5px;
             pointer-events: none;
             opacity: 0;
-            font-size: 13px;
-            line-height: 1.5;
-            max-width: 250px;
+            font-size: 12px;
+            line-height: 1.6;
+            max-width: 220px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
-        .bar { transition: opacity 0.2s; cursor: pointer; }
-        .bar:hover { opacity: 0.75; }
-        .axis text { font-size: 11px; }
+        .dot { cursor: pointer; }
+        .dot.dimmed { opacity: 0.08; }
+        .bar { cursor: pointer; }
+        .bar.dimmed { opacity: 0.08; }
+        .axis text { font-size: 10px; }
+        .brush .selection {
+            fill: #0066cc;
+            fill-opacity: 0.12;
+            stroke: #0066cc;
+            stroke-width: 1.5;
+        }
         .stats {
             display: flex;
-            gap: 20px;
-            margin-top: 20px;
-            padding: 15px;
+            gap: 16px;
+            margin-top: 18px;
+            padding: 14px 16px;
             background: #f8f9fa;
-            border-radius: 4px;
+            border-radius: 6px;
         }
         .stat-item { flex: 1; }
-        .stat-value { font-size: 24px; font-weight: 700; color: #0066cc; }
-        .stat-label { font-size: 12px; color: #666; text-transform: uppercase; }
+        .stat-value { font-size: 22px; font-weight: 700; color: #0066cc; }
+        .stat-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.04em; }
+        .legend-item { cursor: pointer; user-select: none; }
+        .legend-item:hover rect { stroke: #333; stroke-width: 1.5; }
+        .reset-btn {
+            font-size: 11px;
+            padding: 4px 10px;
+            background: #eee;
+            color: #555;
+            border: 1px solid #ccc;
+            margin-left: 8px;
+        }
+        .reset-btn:hover { background: #ddd; }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>College Majors: Salary, Employment & Gender</h1>
-    <p class="subtitle">Explore outcomes for recent graduates — filter by category, sort by different metrics, and hover for details</p>
+    <p class="subtitle">
+        Explore outcomes for recent graduates.
+        <strong>Brush the scatter plot</strong> to highlight majors in the bar chart.
+        <strong>Click a legend category</strong> to filter both views.
+    </p>
 
     <div class="controls">
         <div class="control-group">
@@ -86,18 +131,32 @@
             </select>
         </div>
         <div class="control-group">
-            <label>Sort By</label>
+            <label>Bar Chart — Sort By</label>
             <button id="sortBtn">Median Salary</button>
+        </div>
+        <div class="control-group">
+            <label>&nbsp;</label>
+            <button class="reset-btn" id="resetBrush">Clear Brush</button>
         </div>
     </div>
 
-    <svg id="chart"></svg>
+    <div class="charts">
+        <div class="chart-wrap" style="flex: 1.1;">
+            <div class="chart-title">Top 30 Majors by Selected Metric</div>
+            <div class="chart-hint">Hover bars for details</div>
+            <svg id="barChart"></svg>
+        </div>
+        <div class="chart-wrap" style="flex: 0.9;">
+            <div class="chart-title">Salary vs. Unemployment Rate</div>
+            <div class="chart-hint">Brush to highlight • bubble size = total graduates</div>
+            <svg id="scatterChart"></svg>
+        </div>
+    </div>
 
-    <!-- Summary stats update reactively when filters change -->
     <div class="stats">
         <div class="stat-item">
             <div class="stat-value" id="statCount">-</div>
-            <div class="stat-label">Majors Shown</div>
+            <div class="stat-label">Majors in Filter</div>
         </div>
         <div class="stat-item">
             <div class="stat-value" id="statMedian">-</div>
@@ -117,40 +176,50 @@
 <div class="tooltip" id="tooltip"></div>
 
 <script>
-    const margin = {top: 20, right: 140, bottom: 60, left: 200};
-    const width  = 1140 - margin.left - margin.right;
-    const height = 600  - margin.top  - margin.bottom;
+    // ── dimensions ────────────────────────────────────────────────────────────
+    const bm = {top: 20, right: 130, bottom: 55, left: 195};
+    const bw = 680 - bm.left - bm.right;
+    const bh = 560 - bm.top  - bm.bottom;
 
-    const svg = d3.select("#chart")
-        .attr("width",  width  + margin.left + margin.right)
-        .attr("height", height + margin.top  + margin.bottom)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
+    const sm = {top: 20, right: 20, bottom: 55, left: 55};
+    const sw = 480 - sm.left - sm.right;
+    const sh = 560 - sm.top  - sm.bottom;
+
+    // ── SVG containers ────────────────────────────────────────────────────────
+    const barSvg = d3.select("#barChart")
+        .attr("width",  bw + bm.left + bm.right)
+        .attr("height", bh + bm.top  + bm.bottom)
+        .append("g").attr("transform", `translate(${bm.left},${bm.top})`);
+
+    const scatterSvg = d3.select("#scatterChart")
+        .attr("width",  sw + sm.left + sm.right)
+        .attr("height", sh + sm.top  + sm.bottom)
+        .append("g").attr("transform", `translate(${sm.left},${sm.top})`);
 
     const tooltip = d3.select("#tooltip");
 
-    // Human-readable labels and tick formatters for each sortable metric
+    // ── metric config for bar chart sort ─────────────────────────────────────
     const metricConfig = {
         Median:            { label: "Median Salary",     format: d => "$" + d / 1000 + "k" },
         Unemployment_rate: { label: "Unemployment Rate", format: d => (d * 100).toFixed(1) + "%" },
         ShareWomen:        { label: "% Women",           format: d => (d * 100).toFixed(1) + "%" },
         Total:             { label: "Total Graduates",   format: d => d.toLocaleString() }
     };
-
     const sortMetrics = Object.keys(metricConfig);
-    let currentSortIndex = 0;
+    let sortIndex = 0;
     let sortMetric = sortMetrics[0];
 
-    // Color encodes major category consistently across all filter states
+    // Color encodes major category consistently across both views
     const colorScale = d3.scaleOrdinal(d3.schemeTableau10);
 
     let data = [];
-    let filteredData = [];
+    let filteredData = [];       // filtered by category dropdown
+    let brushedMajors = null;    // Set of major names selected by scatter brush (null = no brush)
 
-    // Load and parse CSV — coerce numeric fields from strings
+    // ── load data ─────────────────────────────────────────────────────────────
     d3.csv("https://raw.githubusercontent.com/fivethirtyeight/data/master/college-majors/recent-grads.csv")
-        .then(rawData => {
-            data = rawData.map(d => ({
+        .then(raw => {
+            data = raw.map(d => ({
                 ...d,
                 Median:            +d.Median,
                 Unemployment_rate: +d.Unemployment_rate,
@@ -159,139 +228,214 @@
                 Employed:          +d.Employed
             }));
 
-            // Populate category dropdown dynamically from data
-            const categories = ["all", ...new Set(data.map(d => d.Major_category))];
+            // Populate category dropdown from data
+            const cats = ["all", ...new Set(data.map(d => d.Major_category))];
             d3.select("#categoryFilter")
-                .selectAll("option")
-                .data(categories)
-                .join("option")
+                .selectAll("option").data(cats).join("option")
                 .attr("value", d => d)
                 .text(d => d === "all" ? "All Categories" : d);
 
             filteredData = data;
-            updateVisualization();
+            render();
         });
 
-    // Interaction 1: category filter — narrows dataset to one academic field
+    // ── interaction 1: category dropdown ─────────────────────────────────────
     d3.select("#categoryFilter").on("change", function() {
-        filteredData = this.value === "all"
-            ? data
-            : data.filter(d => d.Major_category === this.value);
-        updateVisualization();
+        filteredData = this.value === "all" ? data : data.filter(d => d.Major_category === this.value);
+        brushedMajors = null;  // clear brush when filter changes
+        render();
     });
 
-    // Interaction 2: sort toggle — cycles through 4 metrics, re-ranks bars
+    // ── interaction 2: sort toggle ────────────────────────────────────────────
     d3.select("#sortBtn").on("click", function() {
-        currentSortIndex = (currentSortIndex + 1) % sortMetrics.length;
-        sortMetric = sortMetrics[currentSortIndex];
+        sortIndex = (sortIndex + 1) % sortMetrics.length;
+        sortMetric = sortMetrics[sortIndex];
         this.textContent = metricConfig[sortMetric].label;
-        updateVisualization();
+        render();
     });
 
-    function updateVisualization() {
-        // Sort descending by active metric; cap at 30 bars for readability
+    // ── interaction 5: clear brush button ────────────────────────────────────
+    d3.select("#resetBrush").on("click", () => {
+        brushedMajors = null;
+        scatterSvg.select(".brush").call(brush.move, null);
+        render();
+    });
+
+    // ── scatter brush (interaction 4: brushing & linking) ────────────────────
+    const brush = d3.brush()
+        .extent([[0, 0], [sw, sh]])
+        .on("brush end", function({ selection }) {
+            if (!selection) { brushedMajors = null; render(); return; }
+            const [[x0, y0], [x1, y1]] = selection;
+            // Identify which majors fall inside the brushed rectangle
+            brushedMajors = new Set(
+                filteredData.filter(d =>
+                    scatterX(d.Median) >= x0 && scatterX(d.Median) <= x1 &&
+                    scatterY(d.Unemployment_rate) >= y0 && scatterY(d.Unemployment_rate) <= y1
+                ).map(d => d.Major)
+            );
+            render();
+        });
+
+    // Scatter scales are stable across renders (based on full filteredData)
+    let scatterX, scatterY, sizeScale;
+
+    // ── main render ───────────────────────────────────────────────────────────
+    function render() {
+        updateStats();
+        renderBarChart();
+        renderScatter();
+    }
+
+    function updateStats() {
+        // Stats always reflect the category filter, not the brush selection
+        d3.select("#statCount").text(filteredData.length);
+        d3.select("#statMedian").text("$" + Math.round(d3.mean(filteredData, d => d.Median)).toLocaleString());
+        d3.select("#statUnemployment").text((d3.mean(filteredData, d => d.Unemployment_rate) * 100).toFixed(1) + "%");
+        d3.select("#statWomen").text((d3.mean(filteredData, d => d.ShareWomen) * 100).toFixed(1) + "%");
+    }
+
+    // ── bar chart ─────────────────────────────────────────────────────────────
+    function renderBarChart() {
+        // Sort descending by active metric; show top 30 for readability
         const sorted = [...filteredData]
             .sort((a, b) => b[sortMetric] - a[sortMetric])
             .slice(0, 30);
 
         const cfg = metricConfig[sortMetric];
 
-        // Update summary statistics panel to reflect current filter
-        d3.select("#statCount").text(filteredData.length);
-        d3.select("#statMedian").text("$" + Math.round(d3.mean(filteredData, d => d.Median)).toLocaleString());
-        d3.select("#statUnemployment").text((d3.mean(filteredData, d => d.Unemployment_rate) * 100).toFixed(1) + "%");
-        d3.select("#statWomen").text((d3.mean(filteredData, d => d.ShareWomen) * 100).toFixed(1) + "%");
-
-        // x encodes the active sort metric so bar length always matches the ranking
         const x = d3.scaleLinear()
             .domain([0, d3.max(sorted, d => d[sortMetric])])
-            .range([0, width]);
+            .range([0, bw]);
 
-        // y is an ordinal band scale — one band per major name
         const y = d3.scaleBand()
             .domain(sorted.map(d => d.Major))
-            .range([0, height])
-            .padding(0.2);
+            .range([0, bh]).padding(0.2);
 
-        // Remove and redraw axes so labels and ticks match the active metric
-        svg.selectAll(".axis").remove();
-
-        svg.append("g")
-            .attr("class", "axis")
-            .attr("transform", `translate(0,${height})`)
+        // Redraw axes to match active metric
+        barSvg.selectAll(".axis").remove();
+        barSvg.append("g").attr("class", "axis")
+            .attr("transform", `translate(0,${bh})`)
             .call(d3.axisBottom(x).ticks(5).tickFormat(cfg.format));
-
-        svg.append("g")
-            .attr("class", "axis")
+        barSvg.append("g").attr("class", "axis")
             .call(d3.axisLeft(y));
-
-        // Axis label updates to reflect the currently displayed metric
-        svg.append("text")
-            .attr("class", "axis")
-            .attr("x", width / 2)
-            .attr("y", height + 48)
+        barSvg.append("text").attr("class", "axis")
+            .attr("x", bw / 2).attr("y", bh + 48)
             .attr("text-anchor", "middle")
-            .style("font-size", "12px")
-            .style("font-weight", "600")
+            .style("font-size", "11px").style("font-weight", "600")
             .text(cfg.label);
 
-        // Bind with major name as key for object-constancy during transitions
-        const bars = svg.selectAll(".bar")
-            .data(sorted, d => d.Major);
-
+        // Bind with major name as key for object-constancy transitions
+        const bars = barSvg.selectAll(".bar").data(sorted, d => d.Major);
         bars.exit().remove();
-
-        bars.enter()
-            .append("rect")
-            .attr("class", "bar")
-            .attr("x", 0)
-            .attr("y", d => y(d.Major))
-            .attr("height", y.bandwidth())
-            .attr("fill", d => colorScale(d.Major_category))
+        bars.enter().append("rect").attr("class", "bar")
+            .attr("x", 0).attr("height", y.bandwidth())
             .merge(bars)
-            .transition().duration(500)
+            .transition().duration(400)
             .attr("y", d => y(d.Major))
-            .attr("width", d => x(d[sortMetric]))  // width encodes the active metric
+            .attr("width", d => x(d[sortMetric]))   // width encodes the active metric
             .attr("fill", d => colorScale(d.Major_category));
 
-        // Interaction 3: tooltip — details-on-demand for all key stats on hover
-        svg.selectAll(".bar")
-            .on("mouseover", function(event, d) {
-                tooltip.style("opacity", 1).html(`
-                    <strong>${d.Major}</strong><br/>
-                    Category: ${d.Major_category}<br/>
-                    Median Salary: $${d.Median.toLocaleString()}<br/>
-                    Unemployment: ${(d.Unemployment_rate * 100).toFixed(1)}%<br/>
-                    Women: ${(d.ShareWomen * 100).toFixed(1)}%<br/>
-                    Total Grads: ${d.Total.toLocaleString()}
-                `);
-            })
-            .on("mousemove", function(event) {
-                tooltip
-                    .style("left", (event.pageX + 10) + "px")
-                    .style("top",  (event.pageY - 10) + "px");
-            })
-            .on("mouseout", () => tooltip.style("opacity", 0));
+        // Dim bars not in the brush selection (brushing & linking)
+        barSvg.selectAll(".bar")
+            .classed("dimmed", d => brushedMajors !== null && !brushedMajors.has(d.Major))
+            .on("mouseover", (event, d) => showTooltip(event, d))
+            .on("mousemove", moveTooltip)
+            .on("mouseout",  hideTooltip);
 
-        // Rebuild legend to show only categories present in current view
-        svg.selectAll(".legend").remove();
-        const visibleCategories = [...new Set(sorted.map(d => d.Major_category))];
-        const legend = svg.selectAll(".legend")
-            .data(visibleCategories)
-            .enter()
-            .append("g")
-            .attr("class", "legend")
-            .attr("transform", (d, i) => `translate(${width + 10}, ${i * 20})`);
-
-        legend.append("rect")
-            .attr("width", 12).attr("height", 12)
+        // Legend — click to filter both views (interaction: linked selection)
+        barSvg.selectAll(".legend").remove();
+        const cats = [...new Set(sorted.map(d => d.Major_category))];
+        const legend = barSvg.selectAll(".legend").data(cats).enter()
+            .append("g").attr("class", "legend legend-item")
+            .attr("transform", (d, i) => `translate(${bw + 10}, ${i * 20})`)
+            .on("click", (event, cat) => {
+                // Clicking a legend category filters the dropdown and both charts
+                d3.select("#categoryFilter").property("value", cat);
+                filteredData = data.filter(d => d.Major_category === cat);
+                brushedMajors = null;
+                render();
+            });
+        legend.append("rect").attr("width", 12).attr("height", 12)
             .attr("fill", d => colorScale(d));
-
-        legend.append("text")
-            .attr("x", 18).attr("y", 10)
-            .style("font-size", "11px")
-            .text(d => d);
+        legend.append("text").attr("x", 18).attr("y", 10)
+            .style("font-size", "10px").text(d => d);
     }
+
+    // ── scatter plot ──────────────────────────────────────────────────────────
+    function renderScatter() {
+        // Scales are based on full filteredData so brush coordinates stay stable
+        scatterX = d3.scaleLinear()
+            .domain([0, d3.max(filteredData, d => d.Median) * 1.05])
+            .range([0, sw]);
+
+        scatterY = d3.scaleLinear()
+            .domain([0, d3.max(filteredData, d => d.Unemployment_rate) * 1.1])
+            .range([sh, 0]);
+
+        // Bubble size encodes total graduates — a third data dimension
+        sizeScale = d3.scaleSqrt()
+            .domain([0, d3.max(filteredData, d => d.Total)])
+            .range([2, 14]);
+
+        scatterSvg.selectAll(".scatter-axis").remove();
+        scatterSvg.append("g").attr("class", "scatter-axis")
+            .attr("transform", `translate(0,${sh})`)
+            .call(d3.axisBottom(scatterX).ticks(5).tickFormat(d => "$" + d / 1000 + "k"));
+        scatterSvg.append("g").attr("class", "scatter-axis")
+            .call(d3.axisLeft(scatterY).ticks(5).tickFormat(d => (d * 100).toFixed(0) + "%"));
+
+        // Axis labels
+        scatterSvg.selectAll(".scatter-label").remove();
+        scatterSvg.append("text").attr("class", "scatter-label")
+            .attr("x", sw / 2).attr("y", sh + 48)
+            .attr("text-anchor", "middle")
+            .style("font-size", "11px").style("font-weight", "600")
+            .text("Median Salary");
+        scatterSvg.append("text").attr("class", "scatter-label")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -sh / 2).attr("y", -42)
+            .attr("text-anchor", "middle")
+            .style("font-size", "11px").style("font-weight", "600")
+            .text("Unemployment Rate");
+
+        // Draw dots — one per major in filteredData
+        const dots = scatterSvg.selectAll(".dot").data(filteredData, d => d.Major);
+        dots.exit().remove();
+        dots.enter().append("circle").attr("class", "dot")
+            .merge(dots)
+            .attr("cx", d => scatterX(d.Median))
+            .attr("cy", d => scatterY(d.Unemployment_rate))
+            .attr("r",  d => sizeScale(d.Total))
+            .attr("fill", d => colorScale(d.Major_category))
+            .attr("stroke", "white").attr("stroke-width", 0.5)
+            .attr("opacity", 0.8)
+            .classed("dimmed", d => brushedMajors !== null && !brushedMajors.has(d.Major))
+            .on("mouseover", (event, d) => showTooltip(event, d))
+            .on("mousemove", moveTooltip)
+            .on("mouseout",  hideTooltip);
+
+        // Attach brush — must be added after dots so it sits on top
+        if (scatterSvg.select(".brush").empty()) {
+            scatterSvg.append("g").attr("class", "brush").call(brush);
+        }
+    }
+
+    // ── shared tooltip helpers ────────────────────────────────────────────────
+    function showTooltip(event, d) {
+        tooltip.style("opacity", 1).html(`
+            <strong>${d.Major}</strong><br/>
+            Category: ${d.Major_category}<br/>
+            Median Salary: $${d.Median.toLocaleString()}<br/>
+            Unemployment: ${(d.Unemployment_rate * 100).toFixed(1)}%<br/>
+            Women: ${(d.ShareWomen * 100).toFixed(1)}%<br/>
+            Total Grads: ${d.Total.toLocaleString()}
+        `);
+    }
+    function moveTooltip(event) {
+        tooltip.style("left", (event.pageX + 12) + "px").style("top", (event.pageY - 12) + "px");
+    }
+    function hideTooltip() { tooltip.style("opacity", 0); }
 </script>
 </body>
 </html>
